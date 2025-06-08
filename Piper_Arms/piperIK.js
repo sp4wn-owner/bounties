@@ -208,20 +208,9 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
                 wristEuler.x  // joint6 Controlled by webxr Z value
             ];
 
-            // Apply joint limits
-            const wristJointControls = [
-                jointControls.find(c => c.jointName === armJoints[3]),
-                jointControls.find(c => c.jointName === armJoints[4]),
-                jointControls.find(c => c.jointName === armJoints[5])
-            ];
-
             wristAngles.forEach((angle, i) => {
-                const control = wristJointControls[i];
                 let adjustedAngle = angle;
-
                 const jointName = armJoints[3 + i];
-                
-
                 jointUpdates[jointName] = adjustedAngle;
 
                 if (this.debug) {
