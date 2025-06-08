@@ -40,6 +40,7 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
             left: { joint1: 0, joint2: 0, joint3: 0, joint4: 0, joint5: 0, joint6: 0 },
             right: { joint1: 0, joint2: 0, joint3: 0, joint4: 0, joint5: 0, joint6: 0 }
         };
+        
         this.recentTargetX = this.recentTargetX || {
             left: 0,
             right: 0
@@ -48,7 +49,7 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
         // Step 1: Validate input
         if (!targetPos || !isFinite(targetPos.x + targetPos.y + targetPos.z)) {
             console.warn(`${prefix} computeArmIK: Invalid target position, skipping`);
-            return Array(6).fill(0); // Return zero angles for all joints
+            return Array(6).fill(0);
         }
 
         // Step 2: Transform target position to robot base frame
@@ -84,15 +85,15 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
 
         // Step 5: Define joint-specific maxDelta for smoothing
         const jointMaxDelta = {
-            [`${prefix}_joint1`]: 3.5 * deltaTime, // Yaw: moderate for stability
-            [`${prefix}_joint2`]: 5.0 * deltaTime, // Pitch: increased for Z-axis responsiveness
-            [`${prefix}_joint3`]: 5.5 * deltaTime, // Elbow: increased for Z-axis responsiveness
-            [`${prefix}_joint4`]: 4.0 * deltaTime, // Wrist1: higher for fine control
+            [`${prefix}_joint1`]: 3.5 * deltaTime, // Yaw
+            [`${prefix}_joint2`]: 5.0 * deltaTime, // Pitch
+            [`${prefix}_joint3`]: 5.5 * deltaTime, // Elbow
+            [`${prefix}_joint4`]: 4.0 * deltaTime, // Wrist1
             [`${prefix}_joint5`]: 4.0 * deltaTime, // Wrist2
             [`${prefix}_joint6`]: 4.0 * deltaTime  // Wrist3
         };
 
-        // Step 6: Compute yaw (joint1) - rotation around Z-axis with offset
+        // Step 6: Compute yaw (joint1)
         const joint1Control = jointControls.find(c => c.jointName === armJoints[0]);
         const xzDist = Math.sqrt(target.x ** 2 + target.z ** 2 + 1e-10);
         let yaw;
@@ -115,11 +116,9 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
         }
 
         // Step 7: Compute pitch (joint2)
-
-        // Compute pitch in the yaw-adjusted frame
         const joint2Control = jointControls.find(c => c.jointName === armJoints[1]);
         let pitch;
-        let pitchOffset = 0; // Adjust as needed
+        let pitchOffset = 0;
         pitch = Math.atan2(-target.z, -target.x) + pitchOffset;
 
         if (pitch < joint2Control.lowerLimit || pitch > joint2Control.upperLimit) {
@@ -132,15 +131,15 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
             console.log(`${prefix}_joint2 (pitch after yaw adjustment): ${jointUpdates[armJoints[1]].toFixed(3)} rad`);
         }
 
-        // Step 8: Compute elbow (joint3) with yaw and pitch adjustments (IMPROVED CODE)
+        // Step 8: Compute elbow (joint3)
         const pitchAngle = jointUpdates[armJoints[1]];
-        let wristTarget = target.clone().sub(new Vector3(linkLengths.wristToGripper, 0, 0)); // Adjust Z for wrist-to-gripper length
+        let wristTarget = target.clone().sub(new Vector3(linkLengths.wristToGripper, 0, 0));
 
         // Apply yaw and pitch rotations
         const cosPitch = Math.cos(pitchAngle);
         const sinPitch = Math.sin(pitchAngle);
 
-        // Then, apply pitch rotation (around Y-axis) - RECOMMENDED
+        // Apply pitch rotation (around Y-axis)
         wristTarget = new Vector3(
             -wristTarget.x * -cosPitch - wristTarget.z * sinPitch,
             wristTarget.y,
@@ -172,7 +171,7 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
             (L1 ** 2 + D ** 2 - L2 ** 2) / (2 * L1 * D)
         ));
         const elbowAngleCos = Math.acos(cosElbow);
-        const wristAngle = Math.atan2(-wristTarget.z, D); // Use y and x for elbow plane
+        const wristAngle = Math.atan2(-wristTarget.z, D);
         let elbowAngle = wristAngle - elbowAngleCos;
 
         if (elbowAngle < joint3Control.lowerLimit || elbowAngle > joint3Control.upperLimit) {
@@ -243,6 +242,5 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
         if (this.debug) {
             console.log(`${prefix} final joint angles: ${theta.map(a => a.toFixed(3)).join(', ')}`);
         }
-
         return theta;
     }
