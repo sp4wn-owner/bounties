@@ -1,4 +1,6 @@
-// Piper Inverse Kinematics (IK) for WebXR Controllers
+// Optimize the IK calculations for Piper arms using WebXR VR controllers.
+// World vectors after rotation: -X is forward, -Y is left/right (Yaw), Z is up/down.
+// 
 
 linkLengths: {
     joint2: 0.285,  // Upper arm (link2)
@@ -202,9 +204,9 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
             // Convert wrist quaternion to Euler angles (XZY order for wrist joints)
             const wristEuler = new Euler().setFromQuaternion(wristQuat, 'XZY');
             const wristAngles = [
-                wristEuler.y, // joint4 controlled by webxr Y value
-                wristEuler.z, // joint5 controlled by webxr X value
-                wristEuler.x  // joint6 Controlled by webxr Z value
+                wristEuler.y, // joint4
+                wristEuler.z, // joint5
+                wristEuler.x  // joint6
             ];
 
             wristAngles.forEach((angle, i) => {
@@ -244,3 +246,37 @@ computeArmIK(hand, targetPos, deltaTime, targetOrientation = null) {
         }
         return theta;
     }
+
+    // Controller input
+    const controllers = {
+                left: {
+                    position: leftController.gripPosition ? new Vector3(
+                        -leftController.gripPosition.x,
+                        -leftController.gripPosition.y,
+                        leftController.gripPosition.z
+                    ) : null,
+                    orientation: leftController.gripOrientation ? new Quaternion(
+                        -leftController.gripOrientation.x,
+                        leftController.gripOrientation.y,
+                        leftController.gripOrientation.z,
+                        leftController.gripOrientation.w
+                    ) : null,
+                    trigger: leftController.gamepad?.buttons?.[0]?.value || 0,
+                    gripButton: leftController.gamepad?.buttons?.[1]?.pressed || false
+                },
+                right: {
+                    position: rightController.gripPosition ? new Vector3(
+                        rightController.gripPosition.x,
+                        -rightController.gripPosition.y,
+                        rightController.gripPosition.z
+                    ) : null,
+                    orientation: rightController.gripOrientation ? new Quaternion(
+                        -rightController.gripOrientation.x,
+                        rightController.gripOrientation.y,
+                        rightController.gripOrientation.z,
+                        rightController.gripOrientation.w
+                    ) : null,
+                    trigger: rightController.gamepad?.buttons?.[0]?.value || 0,
+                    gripButton: rightController.gamepad?.buttons?.[1]?.pressed || false
+                }
+            };
